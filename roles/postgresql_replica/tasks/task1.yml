@@ -1,0 +1,32 @@
+---
+- name: Install PostgreSQL
+  apt:
+    name: "postgresql-{{ postgresql_version }}"
+    state: present
+    update_cache: yes
+
+- name: Stop PostgreSQL to prepare for replication
+  service:
+    name: postgresql
+    state: stopped
+
+- name: Remove default data directory
+  file:
+    path: "{{ postgres_data_dir }}"
+    state: absent
+
+- name: Clone data from Cloud Master via pg_basebackup
+  shell: |
+    PGPASSWORD='{{ master_password }}' pg_basebackup \
+    -h {{ master_ip }} \
+    -D {{ postgres_data_dir }} \
+    -U {{ master_user }} \
+    -P -v -R --slot=replica_slot_{{ ansible_hostname }}
+  become: true
+  become_user: postgres
+ 
+
+- name: Start PostgreSQL Replica
+  service:
+    name: postgresql
+    state: started

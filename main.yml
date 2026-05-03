@@ -1,0 +1,4 @@
+- hosts: slaves, master
+  become: true
+  roles:
+    - postgresql_replica
